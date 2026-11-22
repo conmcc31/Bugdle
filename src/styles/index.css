@@ -65,3 +65,16 @@ button:disabled { opacity: .5; cursor: default; }
   .code-row { min-height: 2.25rem; }
   .line-number { width: 2.6rem; }
 }
+
+.puzzle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+  padding-bottom: 3rem;
+}
+.puzzle-card { display: flex; flex-direction: column; height: 100%; padding: 1.25rem; }
+.puzzle-card:hover, .puzzle-card:focus-visible { border-color: var(--accent); }
+.puzzle-card h3 { font-size: 1.45rem; letter-spacing: -.03em; margin: 1rem 0 1.75rem; }
+.card-footer { display: flex; justify-content: space-between; gap: 1rem; margin-top: auto; padding-top: .8rem; border-top: 1px solid var(--border); color: var(--muted); font: .85rem var(--mono); }
+.back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); font-size: .9rem; }
+.back-link:hover { text-decoration: underline; }

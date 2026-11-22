@@ -1,19 +1,24 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test } from "vitest";
-import { PuzzleGame } from "../app/App";
+import { App } from "../app/App";
 import { highlight } from "../components/highlight";
 import { puzzles } from "../data";
 
 afterEach(cleanup);
 const puzzle = puzzles[0];
+function openPuzzle() {
+  window.history.replaceState(null, "", `#puzzles/${puzzle.id}`);
+  render(<App />);
+}
+
 const [first, second] = puzzle.bugs.map(bug => bug.line);
 const line = (n: number) => screen.getByRole("button", { name: new RegExp(`^Line ${n}: `) });
 const submit = () => screen.getByRole<HTMLButtonElement>("button", { name: "Submit guess" });
 
 test("keyboard selection, selection cap, and clear", async () => {
   const user = userEvent.setup();
-  render(<PuzzleGame puzzle={puzzle} />);
+  openPuzzle();
   expect(submit().disabled).toBe(true);
   expect(screen.queryByRole("button", { name: /^Line 4:/ })).toBeNull();
   line(1).focus();
@@ -36,7 +41,7 @@ test("keyboard selection, selection cap, and clear", async () => {
 
 test("partial feedback stays aggregate until a win, and replay starts a fresh game", async () => {
   const user = userEvent.setup();
-  render(<PuzzleGame puzzle={puzzle} />);
+  openPuzzle();
   await user.click(line(first));
   await user.click(line(1));
   await user.click(submit());
@@ -60,7 +65,7 @@ test("partial feedback stays aggregate until a win, and replay starts a fresh ga
 
 test("five misses exhaust the attempts and reveal the solutions", async () => {
   const user = userEvent.setup();
-  render(<PuzzleGame puzzle={puzzle} />);
+  openPuzzle();
   for (let i = 0; i < puzzle.maxAttempts; i++) {
     await user.click(line(1));
     await user.click(line(2));
