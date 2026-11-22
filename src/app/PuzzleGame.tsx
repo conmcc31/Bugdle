@@ -41,18 +41,19 @@ export function PuzzleGame({ puzzle, progress, setProgress }: Props) {
   }
 
   return <main className="frame">
-      <section className="intro" aria-labelledby="puzzle-title">
+      <section className="intro" aria-labelledby="page-title">
         <a className="back-link" href="#puzzles">← Back to puzzles</a>
         <div className="metadata"><span>{language}</span><span>{puzzle.difficulty}</span></div>
-        <h2 id="puzzle-title">{puzzle.title}</h2>
+        <h2 id="page-title" tabIndex={-1}>{puzzle.title}</h2>
         <p>{puzzle.description}</p>
       </section>
       <div className="workspace">
         <section className="editor panel" aria-label="Code review">
           <div className="file"><span aria-hidden="true">&lt;/&gt;</span> {puzzle.id}.{extension}</div>
+          {!finished && <button className="skip-code" onClick={() => document.getElementById("selection-heading")?.focus()}>Skip to guess controls</button>}
           <CodeViewer puzzle={puzzle} selection={selection} finished={finished} onToggle={toggle} />
           {!finished && <div className="controls">
-            <div><h3>There are {count} bugs. Select {count} lines.</h3>
+            <div><h3 id="selection-heading" tabIndex={-1}>There are {count} bugs. Select {count} lines.</h3>
               <p>{selection.length} of {count} selected</p></div>
             <div className="actions">
               <button className="secondary" disabled={!selection.length} onClick={() => {

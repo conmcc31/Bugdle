@@ -24,9 +24,9 @@ test("the library opens every catalog puzzle and provides a return link", async 
       expect(within(entry).getByText(label)).toBeDefined();
     }
     await user.click(entry);
-    await screen.findByRole("heading", { name: puzzle.title });
+    expect(await screen.findByRole("heading", { name: puzzle.title })).toBe(document.activeElement);
     await user.click(screen.getByRole("link", { name: /Back to puzzles/ }));
-    await screen.findByRole("heading", { name: "Puzzle library" });
+    expect(await screen.findByRole("heading", { name: "Puzzle library" })).toBe(document.activeElement);
   }
 });
 
@@ -40,7 +40,7 @@ test("the library tracks independent games and resumes submitted guesses", async
   }
   async function back() {
     await user.click(screen.getByRole("link", { name: /Back to puzzles/ }));
-    await screen.findByRole("heading", { name: "Puzzle library" });
+    expect(await screen.findByRole("heading", { name: "Puzzle library" })).toBe(document.activeElement);
   }
   async function guess(lines: number[]) {
     for (const line of lines) {

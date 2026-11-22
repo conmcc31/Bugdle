@@ -21,6 +21,9 @@ test("keyboard selection, selection cap, and clear", async () => {
   openPuzzle();
   expect(submit().disabled).toBe(true);
   expect(screen.queryByRole("button", { name: /^Line 4:/ })).toBeNull();
+  screen.getByRole("button", { name: "Skip to guess controls" }).focus();
+  await user.keyboard("{Enter}");
+  expect(document.activeElement?.id).toBe("selection-heading");
   line(1).focus();
   await user.keyboard("{Enter}");
   expect(line(1).getAttribute("aria-pressed")).toBe("true");

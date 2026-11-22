@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { puzzles } from "../data";
 import { languages } from "../data/languages";
 import { resetPuzzleProgress } from "../game/rules";
@@ -18,6 +18,8 @@ export function App() {
   const [unsaved, setUnsaved] = useState<Record<string, boolean>>({});
   const puzzle = puzzles.find(entry => route === `#puzzles/${entry.id}`);
 
+  const lastPuzzle = useRef(puzzle);
+
   useEffect(() => {
     function navigate() { setRoute(window.location.hash); }
     window.addEventListener("hashchange", navigate);
@@ -25,6 +27,10 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (lastPuzzle.current !== puzzle) {
+      document.getElementById("page-title")?.focus();
+      lastPuzzle.current = puzzle;
+    }
     document.title = `${puzzle?.title ?? "Puzzle library"} · Bugdle`;
   }, [puzzle]);
 
@@ -48,7 +54,7 @@ export function App() {
       setProgress={updateProgress} />
     : <main className="frame">
       <section className="intro">
-        <h2>Puzzle library</h2>
+        <h2 id="page-title" tabIndex={-1}>Puzzle library</h2>
         <p>Choose an example puzzle and find the buggy lines in five guesses.</p>
       </section>
       <ul className="puzzle-grid">{puzzles.map(entry => <li key={entry.id}>

@@ -27,6 +27,7 @@ export function CodeViewer({ puzzle, selection, finished, onToggle }: Props) {
         const revealed = finished && puzzle.bugs.some(bug => bug.line === line);
         const content = <>
           <span className="line-number" aria-hidden="true">{line}</span>
+          {finished && source.trim() && <span className="sr-only">Line {line}{revealed ? ", bug" : ""}. </span>}
           <code>{tokens?.[index]?.map((token, i) =>
             <span key={i} style={{ color: token.color }}>{token.content}</span>
           ) ?? source}</code>
