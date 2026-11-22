@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { puzzles } from "../data";
 import { languages } from "../data/languages";
 import { resetPuzzleProgress } from "../game/rules";
+import { loadProgress, saveProgress } from "../game/storage";
 import type { PuzzleProgress } from "../game/types";
 import { PuzzleGame } from "./PuzzleGame";
 
@@ -13,7 +14,8 @@ function cardStatus(progress?: PuzzleProgress) {
 
 export function App() {
   const [route, setRoute] = useState(() => window.location.hash);
-  const [progress, setProgress] = useState<Record<string, PuzzleProgress>>({});
+  const [progress, setProgress] = useState(() => loadProgress(puzzles));
+  const [unsaved, setUnsaved] = useState<Record<string, boolean>>({});
   const puzzle = puzzles.find(entry => route === `#puzzles/${entry.id}`);
 
   useEffect(() => {
@@ -26,6 +28,12 @@ export function App() {
     document.title = `${puzzle?.title ?? "Puzzle library"} · Bugdle`;
   }, [puzzle]);
 
+  function updateProgress(next: PuzzleProgress) {
+    const saved = saveProgress(next);
+    setProgress(previous => ({ ...previous, [next.puzzleId]: next }));
+    setUnsaved(previous => ({ ...previous, [next.puzzleId]: !saved }));
+  }
+
   return <>
     <header className="masthead"><div className="frame mast-inner">
       <h1><span aria-hidden="true" className="brand-mark">[!]</span> Bugdle</h1>
@@ -34,9 +42,10 @@ export function App() {
         lines match. Find every bug within {puzzle?.maxAttempts ?? 5} guesses.
       </p></details>
     </div></header>
+    {Object.values(unsaved).some(Boolean) && <p className="frame" role="alert">Some progress could not be saved. You can keep playing in this tab.</p>}
     {puzzle ? <PuzzleGame key={puzzle.id} puzzle={puzzle}
       progress={progress[puzzle.id] ?? resetPuzzleProgress(puzzle.id)}
-      setProgress={next => setProgress(previous => ({ ...previous, [next.puzzleId]: next }))} />
+      setProgress={updateProgress} />
     : <main className="frame">
       <section className="intro">
         <h2>Puzzle library</h2>

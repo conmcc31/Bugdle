@@ -1,11 +1,11 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { App } from "../app/App";
 import { highlight } from "../components/highlight";
 import { puzzles } from "../data";
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); window.localStorage.clear(); });
 const puzzle = puzzles[0];
 function openPuzzle() {
   window.history.replaceState(null, "", `#puzzles/${puzzle.id}`);
@@ -81,4 +81,47 @@ test.each(puzzles)("highlighting preserves every source line of $id", async fixt
   const tokens = await highlight(fixture);
   expect(tokens.map(row => row.map(token => token.content).join(""))).toEqual(fixture.code.split("\n"));
   expect(new Set(tokens.flat().map(token => token.color)).size).toBeGreaterThan(1);
+});
+
+test("refresh restores submitted guesses, and restart requires confirmation", async () => {
+  const user = userEvent.setup();
+  openPuzzle();
+  await user.click(line(1));
+  await user.click(line(2));
+  await user.click(submit());
+  await user.click(line(3));
+  cleanup();
+  openPuzzle();
+  expect(screen.getByText("4 attempts remaining")).toBeDefined();
+  expect(screen.getByText("0 of 2 correct")).toBeDefined();
+  expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
+  const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+  const restart = screen.getByRole("button", { name: "Restart puzzle" });
+  await user.click(restart);
+  expect(screen.getByText("4 attempts remaining")).toBeDefined();
+  await user.click(restart);
+  expect(confirm).toHaveBeenCalledTimes(2);
+  cleanup();
+  openPuzzle();
+  expect(screen.getByText("5 attempts remaining")).toBeDefined();
+});
+
+test("a quota error keeps the game playable and the next save retries the whole history", async () => {
+  const user = userEvent.setup();
+  openPuzzle();
+  vi.spyOn(Object.getPrototypeOf(window.localStorage), "setItem").mockImplementationOnce(() => {
+    throw new DOMException("Full", "QuotaExceededError");
+  });
+  await user.click(line(1));
+  await user.click(line(2));
+  await user.click(submit());
+  expect(screen.getByRole("alert").textContent).toMatch(/could not be saved/);
+  expect(screen.getByText("4 attempts remaining")).toBeDefined();
+  await user.click(line(first));
+  await user.click(line(second));
+  await user.click(submit());
+  expect(screen.queryByRole("alert")).toBeNull();
+  cleanup();
+  openPuzzle();
+  expect(screen.getByRole("heading", { name: "Solved in 2/5" })).toBeDefined();
 });

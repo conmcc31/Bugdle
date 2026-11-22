@@ -33,6 +33,13 @@ export function PuzzleGame({ puzzle, progress, setProgress }: Props) {
     setNotice(`Guess ${next.guesses.length}: ${last.correctCount} of ${count} correct.${outcome}`);
   }
 
+  function replay() {
+    if (!finished && !window.confirm("Discard your guesses and restart this puzzle?")) return;
+    setProgress(resetPuzzleProgress(puzzle.id));
+    setSelection([]);
+    setNotice("");
+  }
+
   return <main className="frame">
       <section className="intro" aria-labelledby="puzzle-title">
         <a className="back-link" href="#puzzles">← Back to puzzles</a>
@@ -66,15 +73,14 @@ export function PuzzleGame({ puzzle, progress, setProgress }: Props) {
                 {guess ? <strong className={guess.status}>{guess.correctCount} of {count} correct</strong>
                   : <span className="unused">Unused</span>}</li>;
             })}</ol>
+            {!finished && guesses.length > 0 && <button className="secondary" onClick={replay}>Restart puzzle</button>}
           </section>
           {finished && <section className="panel side result">
             <h3>{state === "won" ? `Solved in ${guesses.length}/${puzzle.maxAttempts}` : "Out of attempts"}</h3>
             <ul>{puzzle.bugs.map(bug => <li key={bug.line}>
               <strong>Line {bug.line}</strong><p>{bug.explanation}</p>
             </li>)}</ul>
-            <button className="primary" onClick={() => {
-              setProgress(resetPuzzleProgress(puzzle.id)); setSelection([]); setNotice("");
-            }}>Replay puzzle</button>
+            <button className="primary" onClick={replay}>Replay puzzle</button>
           </section>}
         </aside>
       </div>

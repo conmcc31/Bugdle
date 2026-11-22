@@ -7,6 +7,7 @@ import { languages } from "../data/languages";
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
   window.history.replaceState(null, "", "/");
 });
 
@@ -64,6 +65,8 @@ test("the library tracks independent games and resumes submitted guesses", async
   expect(screen.getByRole("heading", { name: "Solved in 1/5" })).toBeDefined();
   await user.click(screen.getByRole("button", { name: "Replay puzzle" }));
   await back();
+  cleanup();
+  render(<App />);
   expect(within(card(first.title)).getByText("Not solved")).toBeDefined();
   expect(within(card(second.title)).getByText("Not started")).toBeDefined();
 });
