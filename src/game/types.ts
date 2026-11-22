@@ -20,3 +20,17 @@ export interface BugdlePuzzle {
   bugs: BugdleBug[];
   maxAttempts: number;
 }
+
+export type GuessStatus = "red" | "yellow" | "green";
+
+export interface Guess {
+  selectedLines: number[];
+  correctCount: number;
+  status: GuessStatus;
+}
+
+export interface PuzzleProgress {
+  puzzleId: string;
+  guesses: Guess[];
+  state: "in-progress" | "won" | "lost";
+}

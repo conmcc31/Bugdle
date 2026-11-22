@@ -1,0 +1,79 @@
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, expect, test } from "vitest";
+import { PuzzleGame } from "../app/App";
+import { highlight } from "../components/highlight";
+import { puzzles } from "../data";
+
+afterEach(cleanup);
+const puzzle = puzzles[0];
+const [first, second] = puzzle.bugs.map(bug => bug.line);
+const line = (n: number) => screen.getByRole("button", { name: new RegExp(`^Line ${n}: `) });
+const submit = () => screen.getByRole<HTMLButtonElement>("button", { name: "Submit guess" });
+
+test("keyboard selection, selection cap, and clear", async () => {
+  const user = userEvent.setup();
+  render(<PuzzleGame puzzle={puzzle} />);
+  expect(submit().disabled).toBe(true);
+  expect(screen.queryByRole("button", { name: /^Line 4:/ })).toBeNull();
+  line(1).focus();
+  await user.keyboard("{Enter}");
+  expect(line(1).getAttribute("aria-pressed")).toBe("true");
+  await user.keyboard(" ");
+  expect(line(1).getAttribute("aria-pressed")).toBe("false");
+  await user.click(line(1));
+  await user.click(line(2));
+  await user.click(line(3));
+  expect(screen.getByRole("status").textContent).toMatch(/Selection full/);
+  expect(line(3).getAttribute("aria-pressed")).toBe("false");
+  expect(submit().disabled).toBe(false);
+  await user.click(screen.getByRole("button", { name: "Clear selection" }));
+  expect(submit().disabled).toBe(true);
+  expect(screen.getAllByRole("button", { pressed: false })).toHaveLength(
+    puzzle.code.split("\n").filter(source => source.trim()).length,
+  );
+});
+
+test("partial feedback stays aggregate until a win, and replay starts a fresh game", async () => {
+  const user = userEvent.setup();
+  render(<PuzzleGame puzzle={puzzle} />);
+  await user.click(line(first));
+  await user.click(line(1));
+  await user.click(submit());
+  expect(screen.getByRole("status").textContent).toMatch(/Guess 1: 1 of 2 correct/);
+  expect(screen.getByText("1 of 2 correct").className).toBe("yellow");
+  expect(line(first).className).toBe(line(1).className);
+  expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
+  for (const bug of puzzle.bugs) expect(screen.queryByText(bug.explanation)).toBeNull();
+
+  await user.click(line(first));
+  await user.click(line(second));
+  await user.click(submit());
+  expect(screen.getByRole("heading", { name: "Solved in 2/5" })).toBeDefined();
+  for (const bug of puzzle.bugs) expect(screen.getByText(bug.explanation)).toBeDefined();
+  expect(screen.queryByRole("button", { name: /^Line / })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Replay puzzle" }));
+  expect(screen.getByText("5 attempts remaining")).toBeDefined();
+  expect(screen.queryByText(puzzle.bugs[0].explanation)).toBeNull();
+  expect(submit().disabled).toBe(true);
+});
+
+test("five misses exhaust the attempts and reveal the solutions", async () => {
+  const user = userEvent.setup();
+  render(<PuzzleGame puzzle={puzzle} />);
+  for (let i = 0; i < puzzle.maxAttempts; i++) {
+    await user.click(line(1));
+    await user.click(line(2));
+    await user.click(submit());
+  }
+  expect(screen.getAllByText("0 of 2 correct")).toHaveLength(5);
+  expect(screen.getByRole("heading", { name: "Out of attempts" })).toBeDefined();
+  expect(screen.queryByRole("button", { name: "Submit guess" })).toBeNull();
+  for (const bug of puzzle.bugs) expect(screen.getByText(bug.explanation)).toBeDefined();
+});
+
+test.each(puzzles)("highlighting preserves every source line of $id", async fixture => {
+  const tokens = await highlight(fixture);
+  expect(tokens.map(row => row.map(token => token.content).join(""))).toEqual(fixture.code.split("\n"));
+  expect(new Set(tokens.flat().map(token => token.color)).size).toBeGreaterThan(1);
+});
